@@ -1,0 +1,63 @@
+version: "3.9"
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    restart: always
+    environment:
+      - N8N_HOST=n8n.autops.online
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - WEBHOOK_URL=https://n8n.autops.online/
+      - N8N_PROXY_HOPS=1
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+
+  nginx:
+    image: nginx:latest
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+
+  website:
+    image: nginx:alpine
+    container_name: website
+    ports:
+      - "8090:80"
+    volumes:
+      - ./website/html:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  api:
+    image: tiangolo/uvicorn-gunicorn-fastapi:python3.11
+    container_name: api
+    ports:
+      - "8091:80"
+    volumes:
+      - ./api/app:/app
+    restart: unless-stopped
+
+  monitor:
+    build: ./monitor
+    container_name: monitor
+    ports:
+      - "8092:5000"
+    restart: unless-stopped
+
+  discord-bot:
+    build: ./discord-bot
+    container_name: autops-discord-bot
+    restart: always
+    environment:
+      - PYTHONUNBUFFERED=1
