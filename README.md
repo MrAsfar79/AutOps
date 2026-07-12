@@ -1,10 +1,19 @@
 # AutOps — AI-Driven Incident Management & Infrastructure Automation
 
-AutOps is an intelligent, lightweight, and deployable AIOps assistant designed for the **AMD Developer Hackathon on lablab.ai**. It empowers small operations and development teams to manage, diagnose, and remediate production infrastructure—including Docker containers and system processes—directly through a Discord chat interface.
+AutOps is an autonomous, AI-driven virtual system administrator designed for real-time monitoring, intelligent diagnosis, and automated remediation of server environments.
 
-By combining visual workflow orchestration in **n8n**, a **Retrieval-Augmented Generation (RAG)** pipeline backed by **Pinecone**, and LLM reasoning models via the **NVIDIA NIM** or **OpenRouter APIs**, AutOps turns complex infrastructure diagnostics and action loops into natural conversation.
+Instead of relying on traditional ping monitors, AutOps acts as a 24/7 intelligent agent that watches over your containerized infrastructure. When a service goes down, it instantly fetches the relevant error logs, uses an embedded Large Language Model (LLM) to diagnose the exact root cause of the crash, and formulates a precise fix.
+
+### Key Features Summary
+
+*   **Discord Command Center**: Transforms Discord into a secure, mobile-friendly command-and-control terminal using a custom Python bridge, allowing administrators to manage servers directly from their phones.
+*   **Human-in-the-Loop (HITL) Safety**: To prevent the AI from making destructive changes autonomously, AutOps enforces a strict safety mechanism. The AI generates a remediation proposal and sends an alert to the admin via Discord. The fix is only executed if the admin explicitly replies with an `!approve` command.
+*   **Microservices Architecture**: The system operates securely within Docker and is powered by n8n, a visual orchestration engine that routes complex background health checks, webhook events, and SSH command executions.
+
+Ultimately, AutOps reduces the tedious, multi-step troubleshooting process (connecting to a VPN, authenticating SSH, manually hunting for logs) into a simple mobile notification and a 5-second approval response—drastically lowering both the Mean Time to Detect (MTTD) and Mean Time to Resolve (MTTR) for server incidents.
 
 ---
+
 
 ## 🛠️ System Architecture
 
