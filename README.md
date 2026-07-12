@@ -92,6 +92,7 @@ During our latest iteration, we tackled and resolved three major engineering cha
 
 The repository is structured logically to separate agent runtime environment configurations, server-side code, and system workflows:
 
+*   [`/n8n_workflows/`](file:///c:/Users/naree/Downloads/AutOps-1/n8n_workflows): Contains exported n8n workflow JSON files (e.g., main reasoning agent pipelines, automated health check logic, and tool sub-workflows).
 *   [`/n8n/discord-bot/`](file:///c:/Users/naree/Downloads/AutOps-1/n8n/discord-bot): Python bot gateway that bridges Discord Gateway messages to stateless n8n Webhook calls.
 *   [`/n8n/api/app/`](file:///c:/Users/naree/Downloads/AutOps-1/n8n/api/app): FastAPI service representing a production container application.
 *   [`/n8n/monitor/`](file:///c:/Users/naree/Downloads/AutOps-1/n8n/monitor): Flask service representing a system process monitor.
