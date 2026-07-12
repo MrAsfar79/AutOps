@@ -121,7 +121,7 @@ Create a `.env` file in the `n8n` directory:
 ```env
 # Discord Token & Channel Details
 TOKEN=your_discord_bot_token
-CHANNEL_ID=1496804347030409249
+CHANNEL_ID=YOUR_CHANNEL_ID
 
 # API Webhooks and LLM Credentials
 N8N_HOST=n8n.yourdomain.com
