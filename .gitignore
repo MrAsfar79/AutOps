@@ -1,0 +1,33 @@
+# n8n runtime data and backups
+n8n/n8n_data/
+n8n/n8n_data_backup/
+
+# SSL Certbot configurations and private keys
+n8n/certbot/conf/
+n8n/certbot/www/
+
+# Editor/Temp files
+n8n/docker-compose.yml.save
+*~
+*.swp
+*.save
+
+# Environment files / Secrets
+.env
+*.env
+
+# Python caching & environments
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.venv/
+**/venv/
+**/env/
+**/.pytest_cache/
+
+# IDE/System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

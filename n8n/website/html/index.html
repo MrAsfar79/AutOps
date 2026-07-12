@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutOps</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syncopate:wght@700&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --cyan: #00f5ff;
+    --blue: #0066ff;
+    --purple: #7b2fff;
+    --deep: #0a0010;
+    --glow-cyan: 0 0 40px #00f5ff88, 0 0 80px #00f5ff33;
+    --glow-blue: 0 0 60px #0066ff55;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--deep);
+    font-family: 'Bebas Neue', sans-serif;
+  }
+
+  /* ── Animated grid floor ── */
+  .grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,245,255,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,.06) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridDrift 20s linear infinite;
+    transform-origin: center;
+  }
+  @keyframes gridDrift {
+    0%   { background-position: 0 0; }
+    100% { background-position: 60px 60px; }
+  }
+
+  /* ── Radial pulse vignette ── */
+  .vignette {
+    position: fixed; inset: 0; z-index: 1;
+    background: radial-gradient(ellipse 70% 60% at 50% 50%,
+      transparent 0%,
+      rgba(10,0,16,.5) 60%,
+      rgba(10,0,16,.95) 100%);
+    pointer-events: none;
+  }
+
+  /* ── Floating orbs ── */
+  .orb {
+    position: fixed; border-radius: 50%; filter: blur(80px);
+    z-index: 0; pointer-events: none; will-change: transform;
+  }
+  .orb-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, #0066ff33 0%, transparent 70%);
+    top: -150px; left: -150px;
+    animation: orbFloat1 18s ease-in-out infinite;
+  }
+  .orb-2 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, #7b2fff44 0%, transparent 70%);
+    bottom: -120px; right: -120px;
+    animation: orbFloat2 22s ease-in-out infinite;
+  }
+  .orb-3 {
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, #00f5ff22 0%, transparent 70%);
+    top: 40%; left: 60%;
+    animation: orbFloat3 15s ease-in-out infinite;
+  }
+  @keyframes orbFloat1 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    50%      { transform: translate(80px, 60px) scale(1.1); }
+  }
+  @keyframes orbFloat2 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    50%      { transform: translate(-60px,-80px) scale(1.15); }
+  }
+  @keyframes orbFloat3 {
+    0%,100% { transform: translate(0,0); }
+    50%      { transform: translate(-40px, 50px); }
+  }
+
+  /* ── SVG noise scanlines ── */
+  .scanlines {
+    position: fixed; inset: 0; z-index: 2; pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,.15) 2px,
+      rgba(0,0,0,.15) 4px
+    );
+    opacity: .4;
+  }
+
+  /* ── Animated corner brackets ── */
+  .bracket {
+    position: fixed; width: 60px; height: 60px; z-index: 10;
+    opacity: 0; animation: bracketFade 1s ease .8s forwards;
+  }
+  .bracket::before, .bracket::after {
+    content: ''; position: absolute;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+  }
+  .bracket-tl { top: 24px; left: 24px; }
+  .bracket-tl::before { width: 2px; height: 100%; top: 0; left: 0; }
+  .bracket-tl::after  { width: 100%; height: 2px; top: 0; left: 0; }
+
+  .bracket-tr { top: 24px; right: 24px; }
+  .bracket-tr::before { width: 2px; height: 100%; top: 0; right: 0; left: auto; }
+  .bracket-tr::after  { width: 100%; height: 2px; top: 0; right: 0; }
+
+  .bracket-bl { bottom: 24px; left: 24px; }
+  .bracket-bl::before { width: 2px; height: 100%; bottom: 0; left: 0; top: auto; }
+  .bracket-bl::after  { width: 100%; height: 2px; bottom: 0; left: 0; top: auto; }
+
+  .bracket-br { bottom: 24px; right: 24px; }
+  .bracket-br::before { width: 2px; height: 100%; bottom: 0; right: 0; left: auto; top: auto; }
+  .bracket-br::after  { width: 100%; height: 2px; bottom: 0; right: 0; top: auto; }
+
+  @keyframes bracketFade {
+    to { opacity: 1; }
+  }
+
+  /* ── Ticker line ── */
+  .ticker-line {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 2px; z-index: 10;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--blue), var(--purple), transparent);
+    animation: tickerPulse 3s ease-in-out infinite;
+    opacity: 0; animation: tickerFadeIn 1s ease 1.2s forwards, tickerPulse 3s ease-in-out 1.2s infinite;
+  }
+  @keyframes tickerFadeIn { to { opacity: 1; } }
+  @keyframes tickerPulse {
+    0%,100% { opacity: .6; }
+    50%      { opacity: 1; box-shadow: 0 0 20px var(--cyan), 0 0 40px var(--blue); }
+  }
+
+  /* ── Top scan beam ── */
+  .scan-beam {
+    position: fixed; top: 0; left: 0; right: 0; height: 1px; z-index: 5;
+    background: linear-gradient(90deg, transparent 0%, var(--cyan) 50%, transparent 100%);
+    box-shadow: 0 0 12px var(--cyan);
+    animation: scanDown 8s ease-in-out infinite;
+  }
+  @keyframes scanDown {
+    0%   { top: 0;    opacity: 0; }
+    5%   { opacity: .9; }
+    95%  { opacity: .9; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  /* ── Hex data particles ── */
+  .particles { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+  .particle {
+    position: absolute;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    opacity: 0;
+    animation: particleFall linear infinite;
+    white-space: nowrap;
+  }
+  @keyframes particleFall {
+    0%   { transform: translateY(-20px); opacity: 0; }
+    5%   { opacity: .35; }
+    90%  { opacity: .15; }
+    100% { transform: translateY(110vh); opacity: 0; }
+  }
+
+  /* ── Main stage ── */
+  .stage {
+    position: fixed; inset: 0; z-index: 6;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: clamp(20px, 5vw, 80px);
+  }
+
+  /* ── Glassmorphism card ── */
+  .glass-card {
+    position: relative;
+    background: linear-gradient(135deg,
+      rgba(0,245,255,.04) 0%,
+      rgba(0,102,255,.06) 50%,
+      rgba(123,47,255,.04) 100%);
+    border: 1px solid rgba(0,245,255,.12);
+    border-radius: 4px;
+    padding: clamp(32px, 6vw, 80px) clamp(24px, 8vw, 100px);
+    backdrop-filter: blur(12px);
+    box-shadow:
+      0 0 0 1px rgba(0,245,255,.05) inset,
+      0 40px 120px rgba(0,0,0,.6),
+      0 0 80px rgba(0,102,255,.1);
+    max-width: 1200px;
+    width: 100%;
+    opacity: 0;
+    animation: cardReveal 1.2s cubic-bezier(.16,1,.3,1) .3s forwards;
+  }
+  @keyframes cardReveal {
+    0%   { opacity: 0; transform: translateY(30px) scale(.97); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── Accent bar ── */
+  .accent-bar {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    height: 2px; width: 40%;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    box-shadow: 0 0 20px var(--cyan);
+    border-radius: 0 0 4px 4px;
+  }
+
+  /* ── Quote mark ── */
+  .quote-mark {
+    display: block;
+    font-family: 'Syncopate', sans-serif;
+    font-size: clamp(48px, 8vw, 120px);
+    line-height: .7;
+    color: transparent;
+    background: linear-gradient(135deg, var(--cyan), var(--blue));
+    -webkit-background-clip: text;
+    background-clip: text;
+    margin-bottom: clamp(8px, 2vw, 24px);
+    opacity: 0;
+    animation: quoteMarkIn .8s ease .9s forwards;
+    user-select: none;
+  }
+  @keyframes quoteMarkIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: .5; transform: translateX(0); }
+  }
+
+  /* ── The Quote ── */
+  .quote {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(28px, 5.5vw, 88px);
+    line-height: 1.08;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 2px 40px rgba(0,0,0,.8);
+    opacity: 0;
+    animation: quoteReveal 1.4s cubic-bezier(.16,1,.3,1) .6s forwards;
+  }
+  @keyframes quoteReveal {
+    0%   { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Word-by-word color accents */
+  .w-auto   { color: var(--cyan); text-shadow: var(--glow-cyan); }
+  .w-future { 
+    background: linear-gradient(90deg, #fff, rgba(255,255,255,.7));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .w-present { 
+    background: linear-gradient(90deg, var(--blue), var(--cyan));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: gradShift 4s ease-in-out infinite;
+  }
+  .w-silent {
+    color: rgba(255,255,255,.55);
+    font-style: italic;
+  }
+  .w-infinite {
+    background: linear-gradient(90deg, var(--purple), var(--cyan), var(--blue));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    background-size: 200% 100%;
+    animation: gradShift 3s ease-in-out infinite;
+    display: inline-block;
+  }
+  @keyframes gradShift {
+    0%,100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+
+  /* ── Separator dash ── */
+  .em-dash {
+    color: var(--cyan);
+    opacity: .7;
+    text-shadow: var(--glow-cyan);
+  }
+
+  /* ── Sub-line ── */
+  .sub-line {
+    display: flex; align-items: center; gap: 12px;
+    margin-top: clamp(16px, 3vw, 36px);
+    opacity: 0;
+    animation: subLineIn .8s ease 1.4s forwards;
+  }
+  @keyframes subLineIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .sub-line-bar {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--cyan), transparent);
+    opacity: .4;
+  }
+  .sub-line-bar.right {
+    background: linear-gradient(90deg, transparent, var(--purple));
+  }
+  .sub-line-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(10px, 1.2vw, 14px);
+    color: rgba(0,245,255,.5);
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* ── Status dots ── */
+  .status-row {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; align-items: center;
+    z-index: 10;
+    opacity: 0;
+    animation: subLineIn .8s ease 1.8s forwards;
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    animation: dotBlink 2s ease-in-out infinite;
+  }
+  .dot:nth-child(1) { background: var(--cyan);   box-shadow: 0 0 6px var(--cyan);   animation-delay: 0s; }
+  .dot:nth-child(2) { background: var(--blue);   box-shadow: 0 0 6px var(--blue);   animation-delay: .4s; }
+  .dot:nth-child(3) { background: var(--purple); box-shadow: 0 0 6px var(--purple); animation-delay: .8s; }
+  @keyframes dotBlink {
+    0%,100% { opacity: .3; transform: scale(.8); }
+    50%      { opacity: 1;  transform: scale(1.2); }
+  }
+
+  /* ── Responsive tweaks ── */
+  @media (max-width: 600px) {
+    .bracket { width: 36px; height: 36px; }
+    .bracket-tl, .bracket-tr { top: 12px; }
+    .bracket-tl, .bracket-bl { left: 12px; }
+    .bracket-tr, .bracket-br { right: 12px; }
+    .bracket-bl, .bracket-br { bottom: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background layers -->
+<div class="grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="vignette"></div>
+<div class="scanlines"></div>
+<div class="scan-beam"></div>
+
+<!-- Particles -->
+<div class="particles" id="particles"></div>
+
+<!-- Corner brackets -->
+<div class="bracket bracket-tl"></div>
+<div class="bracket bracket-tr"></div>
+<div class="bracket bracket-bl"></div>
+<div class="bracket bracket-br"></div>
+
+<!-- Bottom ticker line -->
+<div class="ticker-line"></div>
+
+<!-- Main content -->
+<main class="stage">
+  <div class="glass-card">
+    <div class="accent-bar"></div>
+    <span class="quote-mark">"</span>
+    <blockquote class="quote">
+      <span class="w-auto">Automation</span> is not the <span class="w-future">future</span>
+      <span class="em-dash"> — </span>it is the <span class="w-present">present</span>,
+      executing <span class="w-silent">silently</span>,
+      scaling <span class="w-infinite">infinitely</span>.
+    </blockquote>
+    <div class="sub-line">
+      <div class="sub-line-bar"></div>
+      <span class="sub-line-text">SYS_EXEC // AUTOPS // ∞</span>
+      <div class="sub-line-bar right"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Status dots -->
+<div class="status-row">
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+</div>
+
+<script>
+  // Generate falling data particles
+  const data = ['0x1F4', 'AI', 'EXEC', '01', 'FF', 'ACK', 'PKT', '::1', 'SYN', 'TLS', '∞', 'GPU', 'K8S', 'ETH0', 'TCP', 'SVC'];
+  const container = document.getElementById('particles');
+  const count = window.innerWidth < 600 ? 18 : 38;
+
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = data[Math.floor(Math.random() * data.length)];
+    const left = Math.random() * 100;
+    const dur  = 8 + Math.random() * 18;
+    const del  = Math.random() * 20;
+    p.style.cssText = `left:${left}%;animation-duration:${dur}s;animation-delay:-${del}s;opacity:0;`;
+    container.appendChild(p);
+  }
+</script>
+</body>
+</html>
