@@ -6,8 +6,10 @@ Instead of relying on traditional ping monitors, AutOps acts as a 24/7 intellige
 
 ### Key Features Summary
 
-*   **Discord Command Center**: Transforms Discord into a secure, mobile-friendly command-and-control terminal using a custom Python bridge, allowing administrators to manage servers directly from their phones.
+*   **Discord Command Center**: Transforms Discord into a secure, mobile-friendly command-and-control terminal using a custom Python bridge. Admins can execute natural language queries for container status, system metrics, and logs directly from their phones.
 *   **Human-in-the-Loop (HITL) Safety**: To prevent the AI from making destructive changes autonomously, AutOps enforces a strict safety mechanism. The AI generates a remediation proposal and sends an alert to the admin via Discord. The fix is only executed if the admin explicitly replies with an `!approve` command.
+*   **Automated Cron-based Health Checks**: Runs independent workflows to query container statuses, parse failures, store pending remedies in a database, and alert administrators dynamically.
+*   **Semantic RAG Contextualization**: Integrates a Pinecone vector database using `all-MiniLM-L6-v2` embeddings to provide the reasoning model with up-to-date documentation on container responsibilities and success thresholds.
 *   **Microservices Architecture**: The system operates securely within Docker and is powered by n8n, a visual orchestration engine that routes complex background health checks, webhook events, and SSH command executions.
 
 Ultimately, AutOps reduces the tedious, multi-step troubleshooting process (connecting to a VPN, authenticating SSH, manually hunting for logs) into a simple mobile notification and a 5-second approval response—drastically lowering both the Mean Time to Detect (MTTD) and Mean Time to Resolve (MTTR) for server incidents.
@@ -52,14 +54,6 @@ graph TD
 
 ---
 
-## 🚀 Key Features
-
-*   **Natural Language Infrastructure Control**: Query container status, system metrics, and system logs through Discord.
-*   **Human-in-the-Loop (HITL) Safety Gate**: No state-changing or destructive command is ever run automatically. The AI proposes remediation commands, which are staged in a database until approved or denied by an administrator.
-*   **Automated Cron-based Health Checks**: Independent workflows query container statuses, parse failures, store pending remedies, and alert admins dynamically.
-*   **Semantic RAG Contextualization**: Integrates a Pinecone vector database using `all-MiniLM-L6-v2` embeddings to provide the reasoning model with up-to-date documentation on container responsibilities and success thresholds.
-
----
 
 ## 🔬 Session Case Studies & Engineering Achievements
 
