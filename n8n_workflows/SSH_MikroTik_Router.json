@@ -1,0 +1,63 @@
+{
+  "name": "SSH_MikroTik_Router",
+  "nodes": [
+    {
+      "parameters": {
+        "command": "={{ $json.command }}"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        688,
+        32
+      ],
+      "id": "cb811507-9864-4cde-a324-f7e776bb83b8",
+      "name": "Execute a command"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "command"
+            }
+          ]
+        }
+      },
+      "id": "8fc37c4f-f0a9-40d0-8221-1ec872e479e4",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        480,
+        32
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Execute a command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "12566793-9617-4771-9a66-b3e129525ca7",
+  "meta": {
+    "instanceId": "967ff67324bcca2bd3fe91574d6feed3ec592e67da5d08bbc161e0078dd094e6"
+  },
+  "id": "Mpd6h9MVAewIFDai",
+  "tags": []
+}

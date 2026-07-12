@@ -1,0 +1,65 @@
+{
+  "name": "Website Checker",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "url"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "4dd3aa5e-b91a-470f-b8f7-c52735f6e2a9",
+      "name": "When Executed by Another Workflow",
+      "notes": "The target URL to check"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "ab93b2db-260f-4d42-a56f-80780fedffb9",
+      "name": "HTTP Request",
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "623704fe-2584-4bd7-8139-fc714eb9aafd",
+  "meta": {
+    "instanceId": "967ff67324bcca2bd3fe91574d6feed3ec592e67da5d08bbc161e0078dd094e6"
+  },
+  "id": "2D5dKrIMlMKMz5Nk",
+  "tags": []
+}

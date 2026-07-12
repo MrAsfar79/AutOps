@@ -1,0 +1,125 @@
+{
+  "name": "SSH_n8n_Server",
+  "nodes": [
+    {
+      "parameters": {
+        "command": "={{ $json.command }}"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        816,
+        32
+      ],
+      "id": "0ff2507d-4dde-4529-bfb0-d95680bb06ec",
+      "name": "Execute a command",
+      "credentials": {
+        "sshPassword": {
+          "id": "4H7s9SU0Lr94ewEY",
+          "name": "SSH Password account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "command"
+            }
+          ]
+        }
+      },
+      "id": "ce1af2ba-a32b-455b-9353-75c77bb9777f",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        480,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const command = $json.command || '';\n\n// --- KEEP: Basic security to prevent shell injection ---\nconst chainPatterns = [';', '&&', '||', '|', '`', '$('];\nfor (const p of chainPatterns) {\n  if (command.includes(p)) {\n    throw new Error(`Blocked: command contains disallowed chaining/substitution sequence \"${p}\"`);\n  }\n}\n\n// --- KEEP: Block access to highly sensitive paths/files ---\nconst forbiddenPathPatterns = [\n  /\\.env\\b/i,\n  /\\.ssh\\//i,\n  /id_rsa/i,\n  /credentials/i,\n  /\\.bash_history/i,\n  /\\.mysql_history/i,\n  /\\/etc\\/shadow/i,\n  /\\/etc\\/passwd/i,\n  /\\.sql\\b/i,\n  /\\.dump\\b/i\n];\nfor (const re of forbiddenPathPatterns) {\n  if (re.test(command)) {\n    throw new Error(`Blocked: command references a forbidden path or credential pattern (matched ${re})`);\n  }\n}\n\n// --- REMOVED: The forbiddenScope block blocking Nginx and other services has been deleted to allow generalized infrastructure management. ---\n\nreturn [{ json: { command } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        144
+      ],
+      "id": "2ba93d9e-43de-453b-8f8d-1cd2cd11ca81",
+      "name": "Validate Command"
+    },
+    {
+      "parameters": {
+        "jsCode": "const maxLength = 3000;\n\nfunction truncate(str) {\n  if (typeof str !== 'string' || str.length <= maxLength) return str;\n  return str.slice(0, maxLength) + `\\n...[truncated ${str.length - maxLength} characters]`;\n}\n\nreturn $input.all().map(item => {\n  const data = { ...item.json };\n  data.stdout = truncate(data.stdout);\n  data.stderr = truncate(data.stderr);\n  return { json: data };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        80
+      ],
+      "id": "e9f81aeb-18b9-44d5-903e-29efd5316a91",
+      "name": "Truncate Output"
+    }
+  ],
+  "pinData": {
+    "Start": [
+      {
+        "json": {
+          "command": null
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Validate Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Command": {
+      "main": [
+        [
+          {
+            "node": "Execute a command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a command": {
+      "main": [
+        [
+          {
+            "node": "Truncate Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0eb9599d-e04b-402c-8996-1555b636e306",
+  "meta": {
+    "instanceId": "967ff67324bcca2bd3fe91574d6feed3ec592e67da5d08bbc161e0078dd094e6"
+  },
+  "id": "XMZdmXZxfTMpioFm",
+  "tags": []
+}

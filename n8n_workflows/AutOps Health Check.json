@@ -1,0 +1,458 @@
+{
+  "name": "AutOps Health Check",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        96
+      ],
+      "id": "b8b64eaa-3a35-479f-a13e-9c1e24c312eb",
+      "name": "Every 5 Minutes"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.stdout || '';\nconst lines = raw.trim().split('\\n').filter(l => l.trim() !== '');\n\n// Skip header line\nconst dataLines = lines.slice(1);\n\nconst IGNORE = ['n8n-certbot-1'];\n\nconst containers = dataLines.map(line => {\n  const parts = line.trim().split(/\\s{2,}/);\n  const name = parts[parts.length - 1] || 'unknown';\n  const status = parts[4] || 'unknown';\n  const image = parts[1] || 'unknown';\n  return { name, status, image };\n});\n\nconst failed = containers.filter(c =>\n  !c.status.toLowerCase().startsWith('up') && !IGNORE.includes(c.name)\n);\nconst healthy = containers.filter(c =>\n  c.status.toLowerCase().startsWith('up')\n);\n\nconst now = new Date().toISOString();\n\nreturn [{\n  json: {\n    all_containers: containers,\n    failed_containers: failed,\n    healthy_containers: healthy,\n    has_failures: failed.length > 0,\n    total: containers.length,\n    failed_count: failed.length,\n    healthy_count: healthy.length,\n    checked_at: now\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        96
+      ],
+      "id": "5ea21445-ad46-45d3-a3ba-a05fb84ebb50",
+      "name": "Parse Container Status"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cond-001",
+              "leftValue": "={{ $json.has_failures }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        272,
+        96
+      ],
+      "id": "c6f6207f-d63b-4a58-94df-6ecb7ae94df2",
+      "name": "Any Failures?"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "failed_containers",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        496,
+        96
+      ],
+      "id": "e372813f-fec8-4158-86ea-e357113100cb",
+      "name": "Split Failed Containers"
+    },
+    {
+      "parameters": {
+        "jsCode": "const parseData = $('Parse Container Status').first().json;\nconst failed = parseData.failed_containers;\nconst healthy = parseData.healthy_containers;\nconst total = parseData.total;\nconst checkedAt = parseData.checked_at;\n\nconst ts = Math.floor(new Date(checkedAt).getTime() / 1000);\n\nconst failedFields = failed.map(c => ({\n  name: `🔴  ${c.name}`,\n  value: `**Status:** ${c.status}\\n**Proposed Fix:** \\`docker start ${c.name}\\``,\n  inline: false\n}));\n\nconst healthyNames = healthy.map(c => `\\`${c.name}\\``).join(', ') || 'None';\n\nreturn [{\n  json: {\n    embeds: [{\n      title: '🚨  AutOps — Container Alert',\n      description: `**${failed.length} of ${total} containers** are not running on \\`143.198.131.159\\`.\\n\\nReply with:\\n\\`!approve <name>\\` — restart the container\\n\\`!deny <name>\\` — leave it alone\\n\\`!logs <name>\\` — view recent logs`,\n      color: 15158332,\n      fields: [\n        ...failedFields,\n        {\n          name: '✅  Healthy Containers',\n          value: healthyNames,\n          inline: false\n        },\n        {\n          name: '🕐  Detected At',\n          value: `<t:${ts}:F>`,\n          inline: false\n        }\n      ],\n      footer: {\n        text: 'AutOps Monitoring — autops.online'\n      }\n    }]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        96
+      ],
+      "id": "70817eb4-18aa-4496-853d-e3d2bd4696b2",
+      "name": "Build Discord Embed"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/v10/channels/1496804347030409249/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1168,
+        96
+      ],
+      "id": "19d9658a-b113-42f0-9391-b9aef9b62f64",
+      "name": "Send Discord Alert",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "oBNxTPMKh3NhNgoY",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "7dzGH4JgodDLJo63",
+          "mode": "list",
+          "cachedResultName": "pending_actions",
+          "cachedResultUrl": "/projects/e14w9PcZqpZshkHO/datatables/7dzGH4JgodDLJo63"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "container",
+              "keyValue": "={{ $json.container }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "container": "={{ $json.container }}",
+            "command": "={{ $json.command }}",
+            "status": "={{ $json.status }}",
+            "detected_at": "={{ $json.detected_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "container",
+              "displayName": "container",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "command",
+              "displayName": "command",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "detected_at",
+              "displayName": "detected_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        96
+      ],
+      "id": "91c54fcb-3ef9-44e0-b96f-3d81c7979fce",
+      "name": "Upsert row(s)"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "XMZdmXZxfTMpioFm",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/XMZdmXZxfTMpioFm",
+          "cachedResultName": "SSH_n8n_Server"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "command": "docker ps -a"
+          },
+          "matchingColumns": [
+            "command"
+          ],
+          "schema": [
+            {
+              "id": "command",
+              "displayName": "command",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        96
+      ],
+      "id": "e9a86cd5-b473-41b7-86fc-8ff4ae2c9a27",
+      "name": "Call 'SSH_n8n_Server'"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pure logic embedded into the AutOps Health Check workflow's Code nodes by\n// patch-healthcheck.mjs. Kept here so the behaviour guarding the shared\n// pending_actions table is unit-testable rather than trapped inside n8n.\n\nconst VALID_CONTAINER = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$/;\n\n// The exact command this workflow generates. Recovery only clears rows it owns.\nconst automatedCommand = container => `docker start ${container}`;\n\nconst SCHEDULE_RULE = { interval: [{ field: 'minutes', minutesInterval: 5 }] };\n\n// n8n treats `{rule:{interval:[{}]}}` as a DAILY schedule: an interval entry\n// with no explicit `field` silently means \"once a day\".\nfunction scheduleIntervalMinutes(rule) {\n  const entry = rule?.interval?.[0];\n  if (!entry || !entry.field) return 1440;\n  if (entry.field === 'minutes') return entry.minutesInterval;\n  if (entry.field === 'hours') return (entry.hoursInterval ?? 1) * 60;\n  if (entry.field === 'days') return (entry.daysInterval ?? 1) * 1440;\n  return null;\n}\n\n// Build the rows the health check may write. The data table has no NOT NULL\n// support, so this is the only thing standing between a malformed container\n// and an approvable row.\nfunction buildRows(failedContainers, now = new Date().toISOString()) {\n  const rows = [];\n  for (const item of failedContainers) {\n    const container = String(item?.name || '').trim();\n    const status = String(item?.status || '').trim();\n    if (!VALID_CONTAINER.test(container)) continue;\n    if (!status) continue;\n    rows.push({ container, command: automatedCommand(container), status, detected_at: now });\n  }\n  return rows;\n}\n\n// Rows to clear: the container is healthy again and the row holds this\n// workflow's own automated command; or the row is malformed and unactionable.\nfunction planRecovery(pendingRows, healthyContainers) {\n  const healthy = new Set(healthyContainers.map(c => c.name));\n  const resolved = [];\n  for (const row of pendingRows) {\n    if (!row.container || !row.command) {\n      resolved.push({ id: row.id, container: row.container, command: row.command, reason: 'malformed row' });\n      continue;\n    }\n    if (!healthy.has(row.container)) continue;\n    if (row.command.trim() !== automatedCommand(row.container)) continue;\n    resolved.push({ id: row.id, container: row.container, command: row.command, reason: 'container recovered' });\n  }\n  return resolved;\n}\n\n\n// The data table cannot enforce NOT NULL, so this is the enforcement point.\nconst failed = $input.all().map(item => item.json);\nreturn buildRows(failed).map(json => ({ json }));"
+      },
+      "name": "[HC] Validate Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        96
+      ],
+      "id": "f9d535b7-b97b-48a1-8b4c-1579b463306c"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "7dzGH4JgodDLJo63",
+          "mode": "list",
+          "cachedResultName": "pending_actions"
+        },
+        "filters": {
+          "conditions": []
+        }
+      },
+      "name": "[HC] Get Pending",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        400
+      ],
+      "alwaysOutputData": true,
+      "id": "902cf198-c060-4da2-88f2-02f9509879a7"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pure logic embedded into the AutOps Health Check workflow's Code nodes by\n// patch-healthcheck.mjs. Kept here so the behaviour guarding the shared\n// pending_actions table is unit-testable rather than trapped inside n8n.\n\nconst VALID_CONTAINER = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$/;\n\n// The exact command this workflow generates. Recovery only clears rows it owns.\nconst automatedCommand = container => `docker start ${container}`;\n\nconst SCHEDULE_RULE = { interval: [{ field: 'minutes', minutesInterval: 5 }] };\n\n// n8n treats `{rule:{interval:[{}]}}` as a DAILY schedule: an interval entry\n// with no explicit `field` silently means \"once a day\".\nfunction scheduleIntervalMinutes(rule) {\n  const entry = rule?.interval?.[0];\n  if (!entry || !entry.field) return 1440;\n  if (entry.field === 'minutes') return entry.minutesInterval;\n  if (entry.field === 'hours') return (entry.hoursInterval ?? 1) * 60;\n  if (entry.field === 'days') return (entry.daysInterval ?? 1) * 1440;\n  return null;\n}\n\n// Build the rows the health check may write. The data table has no NOT NULL\n// support, so this is the only thing standing between a malformed container\n// and an approvable row.\nfunction buildRows(failedContainers, now = new Date().toISOString()) {\n  const rows = [];\n  for (const item of failedContainers) {\n    const container = String(item?.name || '').trim();\n    const status = String(item?.status || '').trim();\n    if (!VALID_CONTAINER.test(container)) continue;\n    if (!status) continue;\n    rows.push({ container, command: automatedCommand(container), status, detected_at: now });\n  }\n  return rows;\n}\n\n// Rows to clear: the container is healthy again and the row holds this\n// workflow's own automated command; or the row is malformed and unactionable.\nfunction planRecovery(pendingRows, healthyContainers) {\n  const healthy = new Set(healthyContainers.map(c => c.name));\n  const resolved = [];\n  for (const row of pendingRows) {\n    if (!row.container || !row.command) {\n      resolved.push({ id: row.id, container: row.container, command: row.command, reason: 'malformed row' });\n      continue;\n    }\n    if (!healthy.has(row.container)) continue;\n    if (row.command.trim() !== automatedCommand(row.container)) continue;\n    resolved.push({ id: row.id, container: row.container, command: row.command, reason: 'container recovered' });\n  }\n  return resolved;\n}\n\n\n// Input: every row currently in pending_actions.\nconst parsed = $('Parse Container Status').first().json;\nconst pending = $input.all().map(item => item.json);\nreturn planRecovery(pending, parsed.healthy_containers || []).map(json => ({ json }));"
+      },
+      "name": "[HC] Plan Recovery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        400
+      ],
+      "id": "e7a20c70-1ab9-4389-8f01-4ab4df4bf472"
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "7dzGH4JgodDLJo63",
+          "mode": "list",
+          "cachedResultName": "pending_actions"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "[HC] Clear Resolved",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        400
+      ],
+      "id": "22cbadbb-b629-481e-b159-5ba6299c60e3",
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Call 'SSH_n8n_Server'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Container Status": {
+      "main": [
+        [
+          {
+            "node": "Any Failures?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[HC] Get Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Failures?": {
+      "main": [
+        [
+          {
+            "node": "Split Failed Containers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Discord Embed": {
+      "main": [
+        [
+          {
+            "node": "Send Discord Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Failed Containers": {
+      "main": [
+        [
+          {
+            "node": "[HC] Validate Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert row(s)": {
+      "main": [
+        [
+          {
+            "node": "Build Discord Embed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'SSH_n8n_Server'": {
+      "main": [
+        [
+          {
+            "node": "Parse Container Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[HC] Validate Rows": {
+      "main": [
+        [
+          {
+            "node": "Upsert row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[HC] Get Pending": {
+      "main": [
+        [
+          {
+            "node": "[HC] Plan Recovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[HC] Plan Recovery": {
+      "main": [
+        [
+          {
+            "node": "[HC] Clear Resolved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "67ed7986-5e72-4147-a679-2f75ec29aafd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "967ff67324bcca2bd3fe91574d6feed3ec592e67da5d08bbc161e0078dd094e6"
+  },
+  "id": "91eWQIEZis0eEckQ",
+  "tags": []
+}
