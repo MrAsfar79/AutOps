@@ -4,7 +4,7 @@ services:
     image: n8nio/n8n:latest
     restart: always
     environment:
-      - AUTOPS_N8N_WEBHOOK_SECRET=dacc611a4b08b2729332eb60ee88a99a0b8f66edc0d647fd2629c2b84872f3e8
+      - AUTOPS_N8N_WEBHOOK_SECRET=AUTOPS_N8N_WEBHOOK_SECRET
       - N8N_HOST=n8n.autops.online
       - N8N_PORT=5678
       - N8N_PROTOCOL=https
